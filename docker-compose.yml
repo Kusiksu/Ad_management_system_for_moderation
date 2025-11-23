@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./tech-int3-server
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./tech-int3-server:/app
+      - /app/node_modules
+    networks:
+      - avito-network
+
+  frontend:
+    build:
+      context: ./фронтенд
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://backend:3001/api/v1
+    volumes:
+      - ./фронтенд:/app
+      - /app/node_modules
+    networks:
+      - avito-network
+
+networks:
+  avito-network:
+    driver: bridge
+
