@@ -64,6 +64,7 @@ function StatsPage() {
         abortControllerRef.current.abort();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
 
   const loadStats = async () => {

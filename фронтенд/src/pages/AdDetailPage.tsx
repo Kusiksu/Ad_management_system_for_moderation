@@ -71,6 +71,7 @@ function AdDetailPage() {
         abortControllerRef.current.abort();
       }
     };
+    // loadAd и loadAdsIds зависят от id и location.state, которые уже в зависимостях
   }, [id, location.state]);
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -113,7 +114,8 @@ function AdDetailPage() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [ad, loading, currentIndex, allAdsIds, rejectModalVisible]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ad, loading, currentIndex, allAdsIds.length, rejectModalVisible]);
 
   const loadAdsIds = () => {
     if (!id) return;
@@ -122,8 +124,11 @@ function AdDetailPage() {
     
     if (adsIdsFromState && Array.isArray(adsIdsFromState)) {
       setAllAdsIds(adsIdsFromState);
-      const index = adsIdsFromState.indexOf(parseInt(id));
-      setCurrentIndex(index);
+      const adId = parseInt(id, 10);
+      if (!isNaN(adId)) {
+        const index = adsIdsFromState.indexOf(adId);
+        setCurrentIndex(index);
+      }
     } else {
       loadAllAdsIdsFallback();
     }
@@ -137,8 +142,11 @@ function AdDetailPage() {
       const response = await adsAPI.getAds({ limit: 1000 }, abortControllerRef.current?.signal);
       const ids = response.data.ads.map(ad => ad.id);
       setAllAdsIds(ids);
-      const index = ids.indexOf(parseInt(id));
-      setCurrentIndex(index);
+      const adId = parseInt(id, 10);
+      if (!isNaN(adId)) {
+        const index = ids.indexOf(adId);
+        setCurrentIndex(index);
+      }
     } catch (err: unknown) {
       if (err instanceof Error && (err.name === 'AbortError' || err.name === 'CanceledError')) {
         return;
@@ -150,10 +158,17 @@ function AdDetailPage() {
   const loadAd = async () => {
     if (!id) return;
     
+    const adId = parseInt(id, 10);
+    if (isNaN(adId)) {
+      setError('Неверный ID объявления');
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
-      const response = await adsAPI.getAdById(parseInt(id), abortControllerRef.current?.signal);
+      const response = await adsAPI.getAdById(adId, abortControllerRef.current?.signal);
       setAd(response.data);
     } catch (err: unknown) {
       if (err instanceof Error && (err.name === 'AbortError' || err.name === 'CanceledError')) {
@@ -175,9 +190,15 @@ function AdDetailPage() {
   const handleApprove = async () => {
     if (!id) return;
     
+    const adId = parseInt(id, 10);
+    if (isNaN(adId)) {
+      setError('Неверный ID объявления');
+      return;
+    }
+    
     try {
       setLoading(true);
-      await adsAPI.approveAd(parseInt(id), abortControllerRef.current?.signal);
+      await adsAPI.approveAd(adId, abortControllerRef.current?.signal);
       // Обновляю историю модерации
       await loadAd();
     } catch (err: unknown) {
@@ -212,10 +233,16 @@ function AdDetailPage() {
 
     if (!id) return;
     
+    const adId = parseInt(id, 10);
+    if (isNaN(adId)) {
+      setError('Неверный ID объявления');
+      return;
+    }
+    
     try {
       setLoading(true);
       setRejectModalVisible(false);
-      await adsAPI.rejectAd(parseInt(id), reasonText, 'Объявление отклонено модератором', abortControllerRef.current?.signal);
+      await adsAPI.rejectAd(adId, reasonText, 'Объявление отклонено модератором', abortControllerRef.current?.signal);
       await loadAd();
       setRejectReason(null);
       setRejectOtherText('');
@@ -239,9 +266,15 @@ function AdDetailPage() {
   const handleRequestChanges = async () => {
     if (!id) return;
     
+    const adId = parseInt(id, 10);
+    if (isNaN(adId)) {
+      setError('Неверный ID объявления');
+      return;
+    }
+    
     try {
       setLoading(true);
-      await adsAPI.requestChanges(parseInt(id), 'Требуются изменения', 'Необходимо внести изменения в объявление', abortControllerRef.current?.signal);
+      await adsAPI.requestChanges(adId, 'Требуются изменения', 'Необходимо внести изменения в объявление', abortControllerRef.current?.signal);
       await loadAd();
     } catch (err: unknown) {
       if (err instanceof Error && (err.name === 'AbortError' || err.name === 'CanceledError')) {

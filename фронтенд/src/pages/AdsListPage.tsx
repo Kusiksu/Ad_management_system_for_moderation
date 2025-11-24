@@ -219,6 +219,7 @@ function AdsListPage() {
         abortControllerRef.current.abort();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.currentPage, debouncedFilters, sorting]);
 
   // Автообновление списка объявлений каждые 30 секунд
@@ -229,7 +230,7 @@ function AdsListPage() {
     }
 
     pollingIntervalRef.current = setInterval(() => {
-      loadAds(true); //
+      loadAds(true);
       setSecondsSinceUpdate(0);
     }, 30000);
 
@@ -292,6 +293,7 @@ function AdsListPage() {
   }, []);
 
   const loadAds = async (isAutoRefresh: boolean = false) => {
+    let progressInterval: NodeJS.Timeout | null = null;
     try {
       if (!isAutoRefresh) {
         if (abortControllerRef.current) {
@@ -301,10 +303,12 @@ function AdsListPage() {
         setLoading(true);
         setLoadingProgress(0);
         // Симуляция прогресса загрузки
-        const progressInterval = setInterval(() => {
+        progressInterval = setInterval(() => {
           setLoadingProgress(prev => {
             if (prev >= 90) {
-              clearInterval(progressInterval);
+              if (progressInterval) {
+                clearInterval(progressInterval);
+              }
               return prev;
             }
             return prev + 10;
@@ -414,6 +418,9 @@ function AdsListPage() {
             console.error(err);
           } finally {
       if (!isAutoRefresh) {
+        if (progressInterval) {
+          clearInterval(progressInterval);
+        }
         setLoadingProgress(100);
         setTimeout(() => {
           setLoading(false);
